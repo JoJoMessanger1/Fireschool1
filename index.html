@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lern-App Anmeldung</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+
+    <div class="center-container">
+        <div class="box">
+            <h2>Willkommen bei der Lern-App</h2>
+            
+            <select id="rolle">
+                <option value="schueler">Schüler</option>
+                <option value="lehrer">Lehrer</option>
+                <option value="entwickler">Entwickler</option>
+            </select>
+            
+            <input type="password" id="passwort" placeholder="Master-Passwort eingeben" required>
+            <button onclick="login()">Anmelden</button>
+            <p id="meldung"></p>
+        </div>
+    </div>
+
+    <script>
+        // *** HIER IST DAS EINE MASTER-PASSWORT ***
+        const MASTER_PASSWORT = "MeinGeheimesPasswort123"; 
+
+        function login() {
+            const eingegebenesPasswort = document.getElementById('passwort').value;
+            const rolle = document.getElementById('rolle').value;
+            const meldungElement = document.getElementById('meldung');
+
+            if (eingegebenesPasswort === MASTER_PASSWORT) {
+                localStorage.setItem('userRole', rolle);
+                localStorage.setItem('isAuthenticated', 'true');
+                window.location.href = 'lernbereich.html';
+            } else {
+                meldungElement.textContent = 'Falsches Master-Passwort.';
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('userRole');
+            }
+        }
+    </script>
+
+</body>
+</html>
+

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entwickler-Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Spezifische Layout-Anpassung für die Entwicklerseite */
+        .container { 
+            display: grid; 
+            grid-template-columns: 1fr 2fr; /* Formular links, Liste rechts */
+            gap: 30px; 
+            align-items: flex-start;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        <div class="header">
+            <h1>Entwickler-Dashboard | Aufgabenverwaltung</h1>
+            <button class="logout-btn" onclick="logout()">Abmelden</button>
+        </div>
+
+        <div class="container">
+            
+            <div class="box task-form">
+                <h2>Neue Aufgabe lokal hinzufügen</h2>
+                <input type="text" id="titel" placeholder="Titel der Aufgabe" required>
+                <textarea id="beschreibung" placeholder="Aufgabenbeschreibung" required></textarea>
+                <select id="level">
+                    <option value="Schüler">Schüler</option>
+                    <option value="Lehrer">Lehrer</option>
+                </select>
+                <button class="add-btn" onclick="aufgabeLokalHinzufuegen()">Aufgabe nur im Browser hinzufügen</button>
+                <p style="color: #007bff; margin-top: 15px; font-size: 0.9em;">
+                    ⚠️ ACHTUNG: Diese Aufgaben sind nur für **diesen Browser** sichtbar, da sie keinen Server zur Speicherung haben.
+                </p>
+            </div>
+
+            <div class="tasks-list">
+                <div class="box" style="box-shadow: none;">
+                    <h2>Aktuelle Aufgabenliste (aus aufgaben.json)</h2>
+                    <div id="aufgabenContainer" class="aufgaben-liste"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Sicherheitsprüfung
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const userRole = localStorage.getItem('userRole');
+
+        if (isAuthenticated !== 'true' || userRole !== 'entwickler') {
+            window.location.href = 'index.html';
+        }
+
+        // 2. Aufgaben laden (aus der JSON-Datei)
+        async function ladeAufgaben() {
+            try {
+                const response = await fetch('aufgaben.json');
+                let aufgaben = await response.json();
+                
+                // Füge lokal gespeicherte Aufgaben hinzu (falls vorhanden)
+                const lokaleAufgabenString = localStorage.getItem('lokaleEntwicklerAufgaben');
+                if (lokaleAufgabenString) {
+                    const lokaleAufgaben = JSON.parse(lokaleAufgabenString);
+                    aufgaben = aufgaben.concat(lokaleAufgaben);
+                }
+
+                const container = document.getElementById('aufgabenContainer');
+                container.innerHTML = ''; 
+                
+                aufgaben.forEach(aufgabe => {
+                    const aufgabenElement = document.createElement('div');
+                    aufgabenElement.className = 'aufgabe';
+                    
+                    // Markiere lokal hinzugefügte Aufgaben optisch
+                    const levelText = aufgabe.hinweis ? `${aufgabe.level} <span style="color: #dc3545;">(Lokal)</span>` : aufgabe.level;
+
+                    aufgabenElement.innerHTML = `
+                        <h3>${aufgabe.titel}</h3>
+                        <p><strong>Level:</strong> ${levelText}</p>
+                        <p>${aufgabe.beschreibung}</p>
+                    `;
+                    container.appendChild(aufgabenElement);
+                });
+
+            } catch (error) {
+                console.error("Fehler beim Laden der Aufgaben:", error);
+                document.getElementById('aufgabenContainer').innerHTML = '<p>Fehler beim Laden der Aufgaben.</p>';
+            }
+        }
+        
+        // 3. Aufgabe LOKAL (im Browser) hinzufügen
+        function aufgabeLokalHinzufuegen() {
+            const titel = document.getElementById('titel').value;
+            const beschreibung = document.getElementById('beschreibung').value;
+            const level = document.getElementById('level').value;
+
+            if (!titel || !beschreibung) {
+                alert("Titel und Beschreibung dürfen nicht leer sein!");
+                return;
+            }
+
+            const lokaleAufgabenString = localStorage.getItem('lokaleEntwicklerAufgaben');
+            let lokaleAufgaben = lokaleAufgabenString ? JSON.parse(lokaleAufgabenString) : [];
+            
+            const neueId = Date.now(); 
+
+            const neueAufgabe = {
+                id: neueId,
+                titel: titel,
+                beschreibung: beschreibung,
+                level: level,
+                hinweis: "Lokal hinzugefügt" // Hinweis, dass die Aufgabe lokal ist
+            };
+
+            lokaleAufgaben.push(neueAufgabe);
+            
+            localStorage.setItem('lokaleEntwicklerAufgaben', JSON.stringify(lokaleAufgaben));
+            
+            alert(`Aufgabe "${titel}" wurde lokal im Browser gespeichert.`);
+            ladeAufgaben(); 
+            
+            document.getElementById('titel').value = '';
+            document.getElementById('beschreibung').value = '';
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        ladeAufgaben();
+    </script>
+
+</body>
+</html>
+

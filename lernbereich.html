@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernbereich</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-layout">
+        <div class="header">
+            <h1 id="titel">Lernbereich</h1>
+            <button class="logout-btn" onclick="logout()">Abmelden</button>
+        </div>
+        
+        <div class="aufgaben-liste" id="aufgabenContainer">
+            </div>
+    </div>
+
+    <script>
+        // 1. Rollen- und Sicherheitsprüfung
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const userRole = localStorage.getItem('userRole');
+
+        if (isAuthenticated !== 'true') {
+            window.location.href = 'index.html';
+        }
+
+        if (userRole === 'entwickler') {
+            window.location.href = 'entwickler.html';
+        }
+
+        document.getElementById('titel').textContent = 
+            (userRole === 'lehrer' ? 'Lehrerbereich' : 'Schülerbereich') + ' | Deine Aufgaben';
+
+        // 2. Aufgaben laden
+        async function ladeAufgaben() {
+            try {
+                // Lade die statische JSON-Datei
+                const response = await fetch('aufgaben.json');
+                const aufgaben = await response.json();
+                
+                const container = document.getElementById('aufgabenContainer');
+                container.innerHTML = ''; 
+                
+                aufgaben.forEach(aufgabe => {
+                    const aufgabenElement = document.createElement('div');
+                    aufgabenElement.className = 'aufgabe';
+                    
+                    // Filterung der Aufgaben nach der Rolle
+                    let sollAngezeigtWerden = true;
+                    // Nur Schüler-Aufgaben anzeigen, wenn die Rolle Schüler ist
+                    if (userRole === 'schueler' && aufgabe.level !== 'Schüler') {
+                        sollAngezeigtWerden = false;
+                    }
+                    
+                    if (sollAngezeigtWerden) {
+                        aufgabenElement.innerHTML = `
+                            <h3>${aufgabe.titel}</h3>
+                            <p><strong>Level:</strong> ${aufgabe.level}</p>
+                            <p>${aufgabe.beschreibung}</p>
+                        `;
+                        container.appendChild(aufgabenElement);
+                    }
+                });
+
+                if (container.childElementCount === 0) {
+                    container.innerHTML = '<p>Keine Aufgaben für diese Rolle gefunden.</p>';
+                }
+
+            } catch (error) {
+                console.error("Fehler beim Laden der Aufgaben:", error);
+                document.getElementById('aufgabenContainer').innerHTML = '<p>Fehler beim Laden der Aufgaben. Bitte prüfen Sie die Datei aufgaben.json.</p>';
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        ladeAufgaben();
+    </script>
+
+</body>
+</html>
+
